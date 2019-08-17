@@ -222,7 +222,7 @@ padding:0px;
 /*Changed the color*/
 #works {
     color: #ffffff;
-    background: url(../img/testimonial.jpg) no-repeat center center;
+    /*background: url(../img/testimonial.jpg) no-repeat center center;*/
     padding-bottom: 50px;
     -webkit-background-size: cover;
     background-size: cover;
@@ -265,7 +265,7 @@ padding:0px;
 }
 #works .container {
     margin-top:-50px;
-    background-color: rgba(0,0,0,0.6);   
+    /*background-color: rgba(0,0,0,0.6);   */
 }
 
 #works img {
