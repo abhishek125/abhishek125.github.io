@@ -40,7 +40,7 @@ section {
 }
 
 .set-bk-clr {
-    background:linear-gradient(to top, #000, #1ff1ff) ; 
+    
     border-radius: 4px;
     color:#fff;
     font-weight: bolder;
@@ -339,7 +339,7 @@ padding:0px;
     color:#1ff1ff;
 }
 .team, a, a:link{
-    color:#1ff1ff;
+    
     text-decoration: none;
 }
 
