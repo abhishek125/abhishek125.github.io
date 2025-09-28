@@ -26,6 +26,8 @@
       .contact-inline a.secondary { background: #0f172a; color: #e2e8f0; box-shadow: 0 2px 8px rgba(15,23,42,0.35); }
       .contact-inline a.secondary:hover { box-shadow: 0 6px 16px rgba(15,23,42,0.45); }
       .contact-inline svg { width: 18px; height: 18px; }
+      /* Ensure swapped company logos render nicely */
+      .company-logo-swap { max-height: 40px; width: auto; object-fit: contain; display: inline-block; }
     </style>
   </head>
   <body>
@@ -63,7 +65,7 @@
           document.addEventListener('DOMContentLoaded', run);
         }
         // Observe future changes in case the app re-renders
-        const obs = new MutationObserver(() => { hideByHeadingText(); insertContactLinks(); });
+        const obs = new MutationObserver(() => { hideByHeadingText(); insertContactLinks(); swapCompanyLogo(); });
         obs.observe(document.documentElement, { childList: true, subtree: true });
 
         function insertContactLinks() {
@@ -104,6 +106,53 @@
           // Insert right after the heading
           target.insertAdjacentElement('afterend', container);
         }
+
+        function swapCompanyLogo() {
+          const LOGO = '/assets/dunzo.png';
+          const isLime = (src) => /lime|limetray/i.test(src || '');
+          // 1) If any image src looks like Limetray, swap it universally (safe heuristic)
+          document.querySelectorAll('img').forEach(img => {
+            if (isLime(img.src)) {
+              img.src = LOGO;
+              img.alt = 'Dunzo';
+              img.classList.add('company-logo-swap');
+            }
+          });
+
+          // 2) Prefer: find elements mentioning Dunzo and replace a nearby logo in that card/section
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+          const dunzoNodes = [];
+          while (walker.nextNode()) {
+            const t = walker.currentNode;
+            if ((t.nodeValue || '').toLowerCase().includes('dunzo')) dunzoNodes.push(t);
+          }
+          dunzoNodes.forEach(t => {
+            const container = (t.parentElement && (t.parentElement.closest('section, article, li, div, a, header, footer') || t.parentElement));
+            if (!container) return;
+            // Look for an image in proximity
+            let img = container.querySelector('img');
+            if (!img) {
+              // Maybe the logo is an inline SVG; replace it with an img
+              const svg = container.querySelector('svg');
+              if (svg) {
+                const replacement = document.createElement('img');
+                replacement.src = LOGO;
+                replacement.alt = 'Dunzo';
+                replacement.className = 'company-logo-swap';
+                svg.replaceWith(replacement);
+                return;
+              }
+            }
+            if (img) {
+              img.src = LOGO;
+              img.alt = 'Dunzo';
+              img.classList.add('company-logo-swap');
+            }
+          });
+        }
+
+        // Initial logo swap run
+        swapCompanyLogo();
       })();
     </script>
     
