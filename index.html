@@ -109,50 +109,107 @@
 
         function swapCompanyLogo() {
           const LOGO = '/assets/dunzo.png';
-          const isLime = (src) => /lime|limetray/i.test(src || '');
-          // 1) If any image src looks like Limetray, swap it universally (safe heuristic)
+          const isLime = (s) => /lime|limetray/i.test(s || '');
+
+          // 1) Swap <img> by src OR alt/title
           document.querySelectorAll('img').forEach(img => {
-            if (isLime(img.src)) {
-              img.src = LOGO;
-              img.alt = 'Dunzo';
-              img.classList.add('company-logo-swap');
+            const { src, alt } = img;
+            const title = img.getAttribute('title') || '';
+            if (isLime(src) || isLime(alt) || isLime(title)) {
+              // If wrapped in <picture>, replace the whole <picture>
+              const picture = img.closest('picture');
+              if (picture) {
+                const replacement = document.createElement('img');
+                replacement.src = LOGO + '?v=1';
+                replacement.alt = 'Dunzo';
+                replacement.className = (img.className || '') + ' company-logo-swap';
+                picture.replaceWith(replacement);
+              } else {
+                img.removeAttribute('srcset');
+                img.removeAttribute('sizes');
+                img.srcset = '';
+                img.sizes = '';
+                img.src = LOGO + '?v=1';
+                img.alt = 'Dunzo';
+                img.classList.add('company-logo-swap');
+              }
             }
           });
 
-          // 2) Prefer: find elements mentioning Dunzo and replace a nearby logo in that card/section
+          // 2) Swap background-image with limetray reference
+          document.querySelectorAll('*').forEach(el => {
+            const style = getComputedStyle(el);
+            const bg = style.backgroundImage || '';
+            if (isLime(bg)) {
+              el.style.backgroundImage = `url(${LOGO})`;
+              el.style.backgroundSize = 'contain';
+              el.style.backgroundRepeat = 'no-repeat';
+              el.style.backgroundPosition = 'center';
+            }
+          });
+
+          // 3) Find cards mentioning Dunzo OR Limetray and swap nearby visuals
           const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-          const dunzoNodes = [];
+          const nodes = [];
           while (walker.nextNode()) {
             const t = walker.currentNode;
-            if ((t.nodeValue || '').toLowerCase().includes('dunzo')) dunzoNodes.push(t);
+            const val = (t.nodeValue || '').toLowerCase();
+            if (val.includes('dunzo') || val.includes('limetray')) nodes.push(t);
           }
-          dunzoNodes.forEach(t => {
+          nodes.forEach(t => {
             const container = (t.parentElement && (t.parentElement.closest('section, article, li, div, a, header, footer') || t.parentElement));
             if (!container) return;
-            // Look for an image in proximity
-            let img = container.querySelector('img');
-            if (!img) {
-              // Maybe the logo is an inline SVG; replace it with an img
+            let swapped = false;
+            let img = container.querySelector('img, picture img');
+            if (img) {
+              const picture = img.closest('picture');
+              if (picture) {
+                const replacement = document.createElement('img');
+                replacement.src = LOGO + '?v=1';
+                replacement.alt = 'Dunzo';
+                replacement.className = (img.className || '') + ' company-logo-swap';
+                picture.replaceWith(replacement);
+              } else {
+                img.removeAttribute('srcset');
+                img.removeAttribute('sizes');
+                img.srcset = '';
+                img.sizes = '';
+                img.src = LOGO + '?v=1';
+                img.alt = 'Dunzo';
+                img.classList.add('company-logo-swap');
+              }
+              swapped = true;
+            }
+            if (!swapped) {
               const svg = container.querySelector('svg');
               if (svg) {
                 const replacement = document.createElement('img');
-                replacement.src = LOGO;
+                replacement.src = LOGO + '?v=1';
                 replacement.alt = 'Dunzo';
                 replacement.className = 'company-logo-swap';
                 svg.replaceWith(replacement);
-                return;
+                swapped = true;
               }
             }
-            if (img) {
-              img.src = LOGO;
-              img.alt = 'Dunzo';
-              img.classList.add('company-logo-swap');
+            if (!swapped) {
+              // Last resort: add a logo image at the start of the container
+              const replacement = document.createElement('img');
+              replacement.src = LOGO + '?v=1';
+              replacement.alt = 'Dunzo';
+              replacement.className = 'company-logo-swap';
+              container.prepend(replacement);
             }
           });
         }
 
-        // Initial logo swap run
+        // Initial logo swap run + retries (handles late hydration/virtual DOM overwrites)
         swapCompanyLogo();
+        let __dunzoSwapTries = 0;
+        const __dunzoSwapInterval = setInterval(() => {
+          __dunzoSwapTries++;
+          swapCompanyLogo();
+          if (__dunzoSwapTries >= 10) clearInterval(__dunzoSwapInterval);
+        }, 500);
       })();
     </script>
     
